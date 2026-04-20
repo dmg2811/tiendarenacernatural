@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renacer Natural | Tienda</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <img src="imgparaproduccion/logocolor.png" alt="Logo" onerror="this.src='https://via.placeholder.com/50'">
+            <h1>Renacer Natural</h1>
+        </div>
+        <div class="header-right">
+            <input type="text" id="search-bar" placeholder="Buscar..." onkeyup="searchProducts()">
+            <div class="cart-icon" onclick="toggleCart()" style="font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-shopping-basket"></i> 
+                <span id="cart-count">0</span>
+            </div>
+        </div>
+    </header>
+
+    <nav id="category-menu">
+        <span class="cat-btn active" onclick="filterProducts(null, this)">Todos</span>
+        <span class="cat-btn" onclick="filterProducts('Control de Peso', this)">Control de Peso</span>
+        <span class="cat-btn" onclick="filterProducts('Dolor y Articulaciones', this)">Articulaciones</span>
+        <span class="cat-btn" onclick="filterProducts('Energía y Cerebro', this)">Energía</span>
+        <span class="cat-btn" onclick="filterProducts('Estrés y Sueño', this)">Relajación</span>
+        <span class="cat-btn" onclick="filterProducts('Sistema Inmune', this)">Defensas</span>
+        <span class="cat-btn" onclick="filterProducts('Salud y Belleza', this)">Belleza</span>
+        <span class="cat-btn" onclick="filterProducts('Kits', this)" style="border: 2px solid var(--accent);">🎁 Super Kits</span>
+    </nav>
+
+    <div class="carousel-container">
+        <div class="carousel-track" id="carousel-track"></div>
+        <button class="carousel-btn prev" onclick="moveSlide(-1)">&#10094;</button>
+        <button class="carousel-btn next" onclick="moveSlide(1)">&#10095;</button>
+        <div class="carousel-dots" id="carousel-dots"></div>
+    </div>
+
+    <main id="product-list"></main>
+
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-body">
+                <div style="flex: 1; min-width: 300px;">
+                    <img id="modal-img-main" src="">
+                    <div id="modal-thumbnails" style="display: flex; gap: 8px; margin-top: 10px; overflow-x: auto;"></div>
+                </div>
+                <div class="modal-info" style="flex: 1; min-width: 300px;">
+                    <h2 id="modal-name"></h2>
+                    <div class="modal-tabs">
+                        <button onclick="showTab('desc')" id="btn-tab-desc" class="tab-btn active">Descripción</button>
+                        <button onclick="showTab('ficha')" id="btn-tab-ficha" class="tab-btn">Ficha Técnica</button>
+                    </div>
+                    <div id="tab-desc" class="tab-content"><p id="modal-desc"></p></div>
+                    <div id="tab-ficha" class="tab-content" style="display:none;"><p id="modal-ficha" style="white-space: pre-wrap;"></p></div>
+                    <h3 id="modal-price" class="price"></h3>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 20px; justify-content: center;">
+                        <div style="background: #f1f1f1; padding: 5px 10px; border-radius: 50px; display: flex; align-items: center; gap: 10px; border: 1px solid #ddd;">
+                            <button onclick="changeModalQty(-1)" style="background:none; border:none; font-weight:bold; cursor:pointer; padding: 0 5px;">-</button>
+                            <input type="number" id="modal-qty" value="1" min="1" style="width: 35px; text-align: center; border: none; background: none; font-weight: bold;">
+                            <button onclick="changeModalQty(1)" style="background:none; border:none; font-weight:bold; cursor:pointer; padding: 0 5px;">+</button>
+                        </div>
+                        <button class="btn-main" id="m-add-btn" style="flex: 1; margin: 0; padding: 12px; border-radius: 50px;">
+                            <i class="fas fa-cart-plus"></i> Añadir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="side-cart">
+        <div class="cart-header">
+            <h3>Mi Carrito</h3>
+            <button onclick="toggleCart()" style="background:none; border:none; font-size:1.5rem;">×</button>
+        </div>
+        <div id="cart-items"></div>
+        <div id="checkout-form" style="display:none; margin-top:15px; border-top: 2px solid #eee; padding: 15px;">
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="c-nombre" placeholder="Nombre">
+                <input type="text" id="c-apellidos" placeholder="Apellidos">
+            </div>
+            <input type="text" id="c-dir-completa" placeholder="Calle, No. exterior, No. interior">
+            <input type="text" id="c-colonia" placeholder="Colonia">
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="c-cp" placeholder="Código postal">
+                <input type="text" id="c-ciudad" placeholder="Ciudad">
+            </div>
+            <select id="c-estado">
+                <option value="Nuevo León">Nuevo León</option>
+                <option value="CDMX">CDMX</option>
+                <option value="Jalisco">Jalisco</option>
+            </select>
+            <input type="tel" id="c-telefono" placeholder="Teléfono">
+            <button class="btn-main" style="background:#25d366; margin-top: 10px;" onclick="sendWhatsApp()">
+                Enviar WhatsApp y Pedido
+            </button>
+        </div>
+        <div class="cart-footer">
+            <h4>Total: $<span id="cart-total">0</span></h4>
+            <button id="btn-proceder-pago" class="btn-main" onclick="showCheckout()">Proceder al Pedido</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, getDocs, doc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdFq1n-WQL456ZoCKF1KUyiFZ9oju2eA4",
+            authDomain: "renacernatural-f5642.firebaseapp.com",
+            projectId: "renacernatural-f5642",
+            storageBucket: "renacernatural-f5642.firebasestorage.app",
+            messagingSenderId: "597948784131",
+            appId: "1:597948784131:web:e97a3c87b8fde471b73836"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let cart = [];
+        let allProducts = [];
+        let currentSlide = 0;
+        let totalSlides = 0;
+
+        // BANNERS
+        onSnapshot(collection(db, "banners"), (snapshot) => {
+            const track = document.getElementById('carousel-track');
+            const dotsContainer = document.getElementById('carousel-dots');
+            if(!track || !dotsContainer) return;
+            track.innerHTML = ""; dotsContainer.innerHTML = "";
+            const banners = snapshot.docs;
+            totalSlides = banners.length;
+            banners.forEach((doc, index) => {
+                const data = doc.data();
+                track.innerHTML += `<div class="carousel-slide"><a href="${data.enlace || '#'}"><img src="${data.imagen}" alt="Banner"></a></div>`;
+                dotsContainer.innerHTML += `<div class="dot ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})"></div>`;
+            });
+            updateCarousel();
+        });
+
+        window.moveSlide = (dir) => { if(totalSlides === 0) return; currentSlide = (currentSlide + dir + totalSlides) % totalSlides; updateCarousel(); };
+        window.goToSlide = (idx) => { currentSlide = idx; updateCarousel(); };
+        function updateCarousel() {
+            const track = document.getElementById('carousel-track');
+            const dots = document.querySelectorAll('.dot');
+            if(track) track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === currentSlide));
+        }
+        setInterval(() => moveSlide(1), 5000);
+
+        // PRODUCTOS
+        window.loadProducts = async () => {
+            const snap = await getDocs(collection(db, "productos"));
+            allProducts = [];
+            snap.forEach(doc => allProducts.push({id: doc.id, ...doc.data()}));
+            renderGrid(allProducts);
+        };
+
+        function renderGrid(list) {
+            const container = document.getElementById('product-list');
+            container.innerHTML = "";
+            list.forEach(p => {
+                const descVal = p.descuento || 0;
+                const precioFinal = p.precio - (p.precio * (descVal / 100));
+                const imgURL = p.imagenURL ? p.imagenURL.split(',')[0].trim() : "imgparaproduccion/logocolor.png";
+                container.innerHTML += `
+                    <div class="card">
+                        ${p.masVendido ? '<span class="best">MÁS VENDIDO</span>' : ''}
+                        ${descVal > 0 ? `<span class="disc">-${descVal}%</span>` : ''}
+                        <img src="${imgURL}" onclick="openModal('${p.id}')" style="cursor:pointer">
+                        <h3>${p.nombre}</h3>
+                        <p class="price">$${precioFinal.toFixed(2)} ${descVal > 0 ? `<strike>$${p.precio}</strike>` : ''}</p>
+                        <button onclick="addToCart('${p.nombre}', ${precioFinal})">Añadir</button>
+                    </div>`;
+            });
+        }
+
+        window.searchProducts = () => {
+            const term = document.getElementById('search-bar').value.toLowerCase();
+            renderGrid(allProducts.filter(p => p.nombre.toLowerCase().includes(term)));
+        };
+
+        window.filterProducts = (cat, btn) => {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderGrid(cat ? allProducts.filter(p => p.categoria === cat) : allProducts);
+        };
+
+        // MODAL
+        window.openModal = (id) => {
+            const p = allProducts.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('modal-qty').value = 1; 
+            const imagenes = p.imagenURL ? p.imagenURL.split(',') : [];
+            document.getElementById('modal-img-main').src = imagenes[0]?.trim() || "";
+            const thumbContainer = document.getElementById('modal-thumbnails');
+            thumbContainer.innerHTML = "";
+            imagenes.forEach(link => {
+                const img = document.createElement('img');
+                img.src = link.trim();
+                img.style = "width:50px; height:50px; object-fit:cover; cursor:pointer; border:1px solid #eee; border-radius:4px;";
+                img.onclick = () => document.getElementById('modal-img-main').src = link.trim();
+                thumbContainer.appendChild(img);
+            });
+            document.getElementById('modal-name').innerText = p.nombre;
+            document.getElementById('modal-desc').innerText = p.descripcion || "";
+            document.getElementById('modal-ficha').innerText = p.fichaTecnica || "No disponible";
+            const pFinal = p.precio - (p.precio * ((p.descuento || 0) / 100));
+            document.getElementById('modal-price').innerText = `$${pFinal.toFixed(2)}`;
+            
+            document.getElementById('m-add-btn').onclick = () => {
+                const qty = parseInt(document.getElementById('modal-qty').value) || 1;
+                addToCart(p.nombre, pFinal, qty);
+                closeModal();
+            };
+            showTab('desc');
+            document.getElementById('product-modal').style.display = "block";
+        };
+
+        window.changeModalQty = (valor) => {
+            const input = document.getElementById('modal-qty');
+            let actual = parseInt(input.value) || 1;
+            if (actual + valor >= 1) input.value = actual + valor;
+        };
+
+        window.showTab = (tab) => {
+            document.getElementById('tab-desc').style.display = tab === 'desc' ? 'block' : 'none';
+            document.getElementById('tab-ficha').style.display = tab === 'ficha' ? 'block' : 'none';
+            document.getElementById('btn-tab-desc').classList.toggle('active', tab === 'desc');
+            document.getElementById('btn-tab-ficha').classList.toggle('active', tab === 'ficha');
+        };
+
+        window.closeModal = () => document.getElementById('product-modal').style.display = "none";
+
+        // CARRITO
+        window.addToCart = (name, price, qty = 1) => {
+            const existing = cart.find(item => item.name === name);
+            if (existing) existing.quantity += qty;
+            else cart.push({ name, price, quantity: qty });
+            updateCartUI();
+        };
+
+        window.changeQty = (idx, delta) => {
+            cart[idx].quantity += delta;
+            if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+            updateCartUI();
+        };
+
+        window.setCartQty = (idx, val) => {
+            let n = parseInt(val);
+            cart[idx].quantity = (n > 0) ? n : 1;
+            updateCartUI();
+        };
+
+        function updateCartUI() {
+            document.getElementById('cart-count').innerText = cart.reduce((sum, i) => sum + i.quantity, 0);
+            const list = document.getElementById('cart-items');
+            list.innerHTML = cart.map((i, idx) => `
+                <div class="cart-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                    <div style="flex:1"><b>${i.name}</b><br><small>$${i.price}</small></div>
+                    <div style="display:flex; align-items:center; gap:5px; background:#f1f1f1; border-radius:20px; padding:2px 5px;">
+                        <button onclick="changeQty(${idx}, -1)" style="border:none; background:none; cursor:pointer; font-weight:bold;">-</button>
+                        <input type="number" value="${i.quantity}" onchange="setCartQty(${idx}, this.value)" style="width:30px; text-align:center; border:none; background:none; font-weight:bold;">
+                        <button onclick="changeQty(${idx}, 1)" style="border:none; background:none; cursor:pointer; font-weight:bold;">+</button>
+                    </div>
+                </div>`).join('');
+            const total = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            document.getElementById('cart-total').innerText = total.toFixed(2);
+        }
+
+        window.toggleCart = () => document.getElementById('side-cart').classList.toggle('active');
+        
+        window.showCheckout = () => {
+            document.getElementById('checkout-form').style.display = 'block';
+            document.getElementById('btn-proceder-pago').style.display = 'none';
+        };
+
+        // Variable global (dentro del módulo) para guardar el mensaje temporalmente
+        let mensajeTemporalParaWhatsApp = "";
+
+        window.sendWhatsApp = async () => {
+            const n = document.getElementById('c-nombre').value;
+            const t = document.getElementById('cart-total').innerText;
+            const dir = document.getElementById('c-dir-completa').value;
+            const col = document.getElementById('c-colonia').value;
+            
+            if(!n || !dir || cart.length === 0) return alert("Por favor, completa tus datos de envío.");
+
+            const folio = `RN-${Date.now()}`;
+            const productos = cart.map(i => `${i.quantity}x ${i.name}`).join('\n');
+
+            try {
+                // Guardamos en Firebase como ya lo hacías
+                await addDoc(collection(db, "pedidos"), {
+                    folio, cliente: n, total: t, detalles: productos, fecha: serverTimestamp()
+                });
+
+                // Construimos el mensaje pero NO abrimos WhatsApp aún
+                mensajeTemporalParaWhatsApp = `*NUEVO PEDIDO # ${folio}*\n\n*Cliente:* ${n}\n*Dirección:* ${dir}, ${col}\n\n*Productos:*\n${productos}\n\n*Total:* $${t}\n\n_Adjunto comprobante de transferencia:_`;
+
+                // Cerramos carrito y abrimos el modal de transferencia
+                toggleCart();
+                document.getElementById('modal-gracias').style.display = 'flex';
+                
+            } catch (e) { 
+                console.error(e);
+                alert("Error al registrar el pedido"); 
+            }
+        };
+        // Lógica para el botón final dentro del modal de transferencia
+        document.getElementById('btn-final-whatsapp').onclick = () => {
+            const fileInput = document.getElementById('comprobante-file');
+            
+            if (fileInput.files.length === 0) {
+                alert("Por favor, selecciona la foto o PDF de tu comprobante.");
+                return;
+            }
+
+            // Abrimos WhatsApp con el mensaje que preparamos en el paso anterior
+            const tel = "528117875917"; 
+            window.open(`https://wa.me/${tel}?text=${encodeURIComponent(mensajeTemporalParaWhatsApp)}`, '_blank');
+            
+            // Opcional: Recargar o limpiar después de enviar
+            alert("Serás redirigido a WhatsApp. No olvides adjuntar la imagen que seleccionaste.");
+            location.reload(); 
+        };
+        loadProducts();
+    </script>
+
+    <div id="modal-gracias" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+        <div class="transfer-info" style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px dashed var(--primary); text-align: left;">
+            <h4 style="margin-top: 0; color: var(--primary); text-align: center;"><i class="fas fa-university"></i> Datos de Transferencia</h4>
+            <p style="font-size: 0.9rem; margin: 5px 0;"><strong>Banco:</strong> Banco de Crédito</p>
+            <p style="font-size: 0.9rem; margin: 5px 0;"><strong>Tipo de Cuenta:</strong> Ahorros</p>
+            <p style="font-size: 0.9rem; margin: 5px 0;"><strong>Número:</strong> 123-456-789</p>
+            <p style="font-size: 0.9rem; margin: 5px 0;"><strong>RUT/DNI:</strong> 12.345.678-9</p>
+        </div>
+
+        <div style="margin: 20px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+            <label style="display: block; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;">
+                <i class="fas fa-camera"></i> Adjuntar Comprobante (IMG o PDF):
+            </label>
+            <input type="file" id="comprobante-file" accept="image/*,.pdf" style="font-size: 0.8rem; width: 100%;">
+        </div>
+
+        <button class="btn-main" id="btn-final-whatsapp" style="background: #25d366; margin-bottom: 10px;">
+            <i class="fab fa-whatsapp"></i> Enviar Comprobante y Pedido
+        </button>
+        
+        <button class="btn-main" onclick="location.reload()" style="background: #7f8c8d;">Volver</button>
+    </div>
+</div>
+</body>
+</html>

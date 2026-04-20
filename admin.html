@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Pro | Renacer Natural</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --sidebar-width: 260px; --bg-admin: #f4f7f6; }
+        body { display: flex; min-height: 100vh; background-color: var(--bg-admin); margin: 0; font-family: 'Poppins', sans-serif; }
+
+        /* SIDEBAR */
+        .sidebar { width: var(--sidebar-width); background: var(--primary); color: white; padding: 20px; position: fixed; height: 100vh; z-index: 1100; box-sizing: border-box; display: flex; flex-direction: column; }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+        .nav-item { padding: 12px 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.8); }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.15); color: white; }
+
+        /* CONTENIDO */
+        .main-content { margin-left: var(--sidebar-width); flex: 1; padding: 40px; box-sizing: border-box; }
+        .admin-section { display: none; animation: fadeIn 0.4s; }
+        .admin-section.active { display: block; }
+        @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+
+        /* CARDS Y FORMULARIOS */
+        .glass-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid #eee; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: 1 / -1; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px; box-sizing: border-box; font-family: inherit; }
+        label { font-weight: bold; font-size: 0.85rem; color: #555; }
+
+        /* TABLAS E ICONOS */
+        .admin-table { width: 100%; border-collapse: collapse; background: white; }
+        .admin-table th { text-align: left; padding: 12px; border-bottom: 2px solid #eee; color: #888; }
+        .admin-table td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .btn-edit { background: #e3f2fd; color: #1976d2; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
+        .btn-del { background: #fee2e2; color: #dc2626; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
+        .status-select { border: none; padding: 6px 12px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
+        .folio-link { background: none; border: none; color: var(--primary); font-weight: bold; text-decoration: underline; cursor: pointer; padding: 0; }
+    
+        /* Colores dinámicos para los estados */
+        .status-Pendiente { background: #fff3cd; color: #856404; } /* Amarillo */
+        .status-Surtido   { background: #e0f2fe; color: #075985; } /* Azul claro */
+        .status-Enviado   { background: #d4edda; color: #155724; } /* Verde */
+        .status-Cancelado { background: #fee2e2; color: #991b1b; } /* Rojo */
+
+        /* Estilos extras para bitácora */
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2><i class="fas fa-leaf"></i> <span>Renacer Admin</span></h2>
+        
+        <div class="nav-item active" data-role="superadmin,admin,ventas,lector" onclick="showSection('sec-pedidos', this)"><i class="fas fa-shopping-cart"></i> <span>Pedidos</span></div>
+        
+        <div class="nav-item" data-role="superadmin,admin,inventario,lector" onclick="showSection('sec-productos', this)"><i class="fas fa-boxes"></i> <span>Inventario</span></div>
+        
+        <div class="nav-item" data-role="superadmin,admin,inventario" onclick="showSection('sec-nuevo', this)"><i class="fas fa-plus-circle"></i> <span>Nuevo Producto</span></div>
+        
+        <div class="nav-item" data-role="superadmin,admin" onclick="showSection('sec-banners', this)"><i class="fas fa-image"></i> <span>Banners Web</span></div>
+
+        <div class="nav-item" data-role="superadmin" onclick="showSection('sec-bitacora', this)"><i class="fas fa-history"></i> <span>Historial</span></div>
+
+        <div class="nav-item" data-role="superadmin" onclick="showSection('sec-usuarios', this)"><i class="fas fa-users-cog"></i> <span>Equipo</span></div>
+        
+        <div class="nav-item" onclick="window.location.href='index.html'"><i class="fas fa-store"></i> <span>Ver Tienda</span></div>
+        
+        <div class="nav-item" onclick="logout()" style="margin-top: auto; color: #ff4757; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+            <i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <div id="sec-pedidos" class="admin-section active">
+            <h1>Gestión de Pedidos</h1>
+            <div class="glass-card" style="padding: 15px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <div style="position: relative; flex: 1;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888;"></i>
+                    <input type="text" id="pedido-search" placeholder="Buscar por cliente o folio..." style="padding-left: 35px; margin-top: 0;" onkeyup="filterOrders()">
+                </div>
+                <div style="color: #888; font-size: 0.9rem;">
+                    <i class="fas fa-filter"></i> <span id="order-count">0</span> pedidos
+                </div>
+            </div>
+            <div class="glass-card">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Estatus</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody id="order-history"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sec-productos" class="admin-section">
+            <h1>Inventario de Productos</h1>
+            <div class="glass-card">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Categoría</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody id="admin-product-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sec-nuevo" class="admin-section">
+            <h1 id="form-title">Configuración de Producto</h1>
+            <div class="glass-card">
+                <div class="form-grid">
+                    <input type="hidden" id="p-id">
+                    <div><label>Nombre del Producto</label><input type="text" id="p-nombre"></div>
+                    <div><label>Precio Público ($)</label><input type="number" id="p-precio"></div>
+                    <div>
+                        <div class="form-grid" style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
+    <div>
+        <label>Stock Actual</label>
+        <input type="number" id="p-stock" placeholder="0">
+    </div>
+    <div>
+        <label>Alerta Stock Mínimo</label>
+        <input type="number" id="p-min" value="5">
+    </div>
+    <div>
+        <label>Costo de Compra ($)</label>
+        <input type="number" id="p-costo" placeholder="Cuánto te costó a ti">
+    </div>
+    <div>
+        <label>SKU / Código</label>
+        <input type="text" id="p-sku" placeholder="RN-XXXX">
+    </div>
+</div>
+                        <label>Categoría</label>
+                        <select id="p-cat">
+                            <option value="Control de Peso">Control de Peso</option>
+                            <option value="Dolor y Articulaciones">Dolor y Articulaciones</option>
+                            <option value="Sistema Inmune">Sistema Inmune</option>
+                            <option value="Salud y Belleza">Salud y Belleza</option>
+                            <option value="Kits">🎁 Kits de Tratamiento</option>
+                        </select>
+                    </div>
+                    <div><label>Descuento (%)</label><input type="number" id="p-desc" value="0"></div>
+                    <div class="full-width"><label>URL de Imagen</label><input type="text" id="p-img"></div>
+                    <div class="full-width"><label>Descripción Corta</label><textarea id="p-descrip" rows="2"></textarea></div>
+                    <div class="full-width"><label>Ficha Técnica</label><textarea id="p-ficha" rows="3"></textarea></div>
+                    <div><label><input type="checkbox" id="p-best" style="width:auto"> ¿Producto Destacado?</label></div>
+                    <div class="full-width">
+                        <button class="btn-main" onclick="saveProduct()">Guardar Producto</button>
+                        <button id="btn-cancel" onclick="resetForm()" style="display:none; background:#888; margin-top:10px;">Cancelar Edición</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-banners" class="admin-section">
+            <h1>Gestión del Carrusel</h1>
+            <div class="glass-card">
+                <div class="form-grid">
+                    <div><label>Imagen del Banner (URL)</label><input type="text" id="b-img"></div>
+                    <div><label>Link de destino</label><input type="text" id="b-link"></div>
+                    <div class="full-width"><button class="btn-main" onclick="saveBanner()">Publicar Banner</button></div>
+                </div>
+            </div>
+            <div class="glass-card">
+                <table class="admin-table">
+                    <tbody id="admin-banner-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sec-bitacora" class="admin-section">
+            <h1>Historial de Actividad</h1>
+            <div class="card" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                <div>
+                    <label style="display:block; font-size:0.8rem; margin-bottom:5px;">Buscar por detalle</label>
+                    <input type="text" id="log-search" placeholder="Ej: Pedido #RN..." style="padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 250px;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; margin-bottom:5px;">Filtrar por Acción</label>
+                    <select id="log-filter-accion" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                        <option value="">Todas las acciones</option>
+                        <option value="Inicio de Sesión">Inicio de Sesión</option>
+                        <option value="Cambio de Estatus">Cambio de Estatus</option>
+                        <option value="Guardar Producto">Guardar Producto</option>
+                        <option value="Eliminar Producto">Eliminar Producto</option>
+                        <option value="Gestión de Equipo">Gestión de Equipo</option>
+                    </select>
+                </div>
+                <button class="btn-main" onclick="filtrarBitacora()" style="width: auto; padding: 10px 20px;">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+            </div>
+            <div class="card">
+                <table style="width:100%; text-align:left; border-collapse:collapse;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #eee;">
+                            <th style="padding:12px;">Fecha/Hora</th>
+                            <th style="padding:12px;">Usuario</th>
+                            <th style="padding:12px;">Acción</th>
+                            <th style="padding:12px;">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-bitacora"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sec-usuarios" class="admin-section">
+            <h1>Gestión de Equipo</h1>
+            <div class="glass-card" style="margin-bottom: 20px; text-align: left;">
+                <h3>Registrar Nuevo Miembro</h3>
+                <p style="font-size: 0.85rem; color: #888;">
+                    Copia el <strong>UID</strong> del usuario desde la pestaña Authentication de Firebase y asígnale un rol.
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <input type="text" id="u-uid" placeholder="Pegar UID de Firebase">
+                    <input type="text" id="u-nombre" placeholder="Nombre del empleado">
+                    <select id="u-rol">
+                        <option value="lector">Lector (Solo ver)</option>
+                        <option value="ventas">Ventas (Gestionar Pedidos)</option>
+                        <option value="inventario">Inventario (Gestionar Productos)</option>
+                        <option value="admin">Administrador (Todo menos Equipo)</option>
+                        <option value="superadmin">Superadmin (Acceso Total)</option>
+                    </select>
+                    <button class="btn-main" onclick="saveUserRole()">Guardar Miembro</button>
+                </div>
+            </div>
+            <div class="glass-card">
+                <h3>Miembros Activos</h3>
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Nombre</th><th>Rol</th><th>Acciones</th></tr>
+                    </thead>
+                    <tbody id="admin-user-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div> <div id="order-modal" style="display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); overflow-y:auto;">
+        <div style="background:#fff; margin:40px auto; padding:30px; border-radius:15px; width:90%; max-width:600px; position:relative;">
+            <span onclick="closeOrderModal()" style="position:absolute; top:15px; right:20px; font-size:30px; cursor:pointer;">&times;</span>
+            <h2 id="view-folio" style="color:var(--primary); margin:0 0 20px 0;"></h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div>
+                    <label>Cliente:</label>
+                    <p id="view-cliente" style="margin:5px 0; font-weight:bold;"></p>
+                    <p id="view-tel" style="margin:0; color:#25d366; cursor:pointer; font-weight:bold;"></p>
+                </div>
+                <div>
+                    <label>Estatus:</label>
+                    <p id="view-status" style="margin:5px 0;"></p>
+                </div>
+            </div>
+            <label>Dirección de Envío:</label>
+            <div id="view-direccion" style="background:#f9f9f9; padding:15px; border-radius:8px; border-left:4px solid var(--primary); margin:10px 0; font-size:0.9rem;"></div>
+            <button onclick="copyToClipboard()" style="background:#666; color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;"><i class="fas fa-copy"></i> Copiar Dirección</button>
+            <h3 style="margin-top:25px; border-top:1px solid #eee; padding-top:15px;">Productos:</h3>
+            <div id="view-productos" style="line-height:1.6;"></div>
+            <h2 id="view-total" style="text-align:right; color:var(--primary); border-top:2px solid #eee; margin-top:20px; padding-top:10px;"></h2>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, getDoc, addDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdFq1n-WQL456ZoCKF1KUyiFZ9oju2eA4",
+            authDomain: "renacernatural-f5642.firebaseapp.com",
+            projectId: "renacernatural-f5642",
+            storageBucket: "renacernatural-f5642.firebasestorage.app",
+            messagingSenderId: "597948784131",
+            appId: "1:597948784131:web:e97a3c87b8fde471b73836"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUserRole = null;
+        let currentUserNombre = "Usuario";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+                if (userDoc.exists()) {
+                    currentUserRole = userDoc.data().rol;
+                    currentUserNombre = userDoc.data().nombre || user.email;
+                    
+                    applyPermissions(currentUserRole);
+                    document.body.classList.add('admin-ready');
+                    
+                    initApp(); 
+                    if (currentUserRole === 'superadmin') {
+                        listenUsers();
+                        listenBitacora();
+                    }
+                    registrarActividad("Inicio de Sesión", "El usuario accedió al panel");
+                } else {
+                    alert("No tienes perfil de usuario.");
+                    signOut(auth);
+                }
+            } else {
+                showLoginScreen();
+            }
+        });
+
+        function applyPermissions(rol) {
+            const elements = document.querySelectorAll('[data-role]');
+            elements.forEach(el => {
+                const allowedRoles = el.getAttribute('data-role').split(',');
+                if (!allowedRoles.includes(rol)) el.remove();
+            });
+
+            if (rol === 'lector') {
+                setTimeout(() => {
+                    document.querySelectorAll('button:not(.folio-link), select, input').forEach(i => i.disabled = true);
+                    document.querySelectorAll('.btn-del, .btn-edit').forEach(b => b.style.display = 'none');
+                }, 1000);
+            }
+        }
+
+        function showLoginScreen() {
+            document.body.innerHTML = `
+                <div style="height:100vh; display:flex; align-items:center; justify-content:center; background:#2d5a27; font-family:sans-serif;">
+                    <div style="background:white; padding:40px; border-radius:15px; text-align:center; width:300px;">
+                        <h2 style="color:#2d5a27">Renacer Admin</h2>
+                        <input type="email" id="l-email" placeholder="Correo" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px;">
+                        <input type="password" id="l-pass" placeholder="Contraseña" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px;">
+                        <button id="btn-login" style="width:100%; padding:12px; background:#2d5a27; color:white; border:none; border-radius:5px; cursor:pointer;">Entrar</button>
+                    </div>
+                </div>`;
+            document.getElementById('btn-login').onclick = async () => {
+                try {
+                    await signInWithEmailAndPassword(auth, document.getElementById('l-email').value, document.getElementById('l-pass').value);
+                    location.reload();
+                } catch (e) { alert("Credenciales incorrectas"); }
+            };
+        }
+
+        function initApp() {
+            onSnapshot(collection(db, "productos"), (snap) => {
+                const list = document.getElementById('admin-product-list');
+                if(!list) return;
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const p = d.data();
+                    list.innerHTML += `<tr>
+                        <td><img src="${(p.imagenURL || '').split(',')[0]}" width="50" height="50" style="object-fit:cover; border-radius:8px;"></td>
+                        <td><strong>${p.nombre}</strong></td>
+                        <td>$${p.precio}</td>
+                        <td>${p.categoria}</td>
+                        <td>
+                            <button class="btn-edit" onclick="editProduct('${d.id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn-del" onclick="deleteProduct('${d.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                });
+            });
+
+            const q = query(collection(db, "pedidos"), orderBy("fecha", "desc"));
+            onSnapshot(q, (snap) => {
+                const list = document.getElementById('order-history');
+                if(!list) return; 
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const o = d.data();
+                    list.innerHTML += `<tr>
+                        <td><button class="folio-link" onclick="showOrderDetails('${d.id}')">${o.folio || d.id.slice(0,5)}</button></td>
+                        <td>${o.cliente}</td>
+                        <td>$${o.total}</td>
+                        <td>
+                            <select class="status-select status-${o.estatus || 'Pendiente'}" onchange="updateStatus('${d.id}', this.value)">
+                                <option value="Pendiente" ${o.estatus==='Pendiente'?'selected':''}>⏳ Pendiente</option>
+                                <option value="Surtido" ${o.estatus==='Surtido'?'selected':''}>📦 Surtido</option>
+                                <option value="Enviado" ${o.estatus==='Enviado'?'selected':''}>🚚 Enviado</option>
+                                <option value="Cancelado" ${o.estatus==='Cancelado'?'selected':''}>❌ Cancelado</option>
+                            </select>
+                        </td>
+                        <td><button class="btn-del" onclick="deleteOrder('${d.id}')"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+                });
+                document.getElementById('order-count').innerText = snap.size;
+            });
+
+            onSnapshot(collection(db, "banners"), (snap) => {
+                const list = document.getElementById('admin-banner-list');
+                if(!list) return;
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const b = d.data();
+                    list.innerHTML += `<tr>
+                        <td><img src="${b.imagen}" width="100" height="50" style="object-fit:cover; border-radius:5px;"></td>
+                        <td>${b.enlace}</td>
+                        <td><button class="btn-del" onclick="deleteBanner('${d.id}')"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+                });
+            });
+        }
+
+        window.showSection = (id, el) => {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const target = document.getElementById(id);
+            if(target) target.classList.add('active');
+            if(el) el.classList.add('active');
+        };
+
+        window.saveProduct = async () => {
+            if(['lector', 'ventas'].includes(currentUserRole)) return alert("No tienes permisos");
+            const id = document.getElementById('p-id').value;
+            const data = {
+                nombre: document.getElementById('p-nombre').value,
+                precio: Number(document.getElementById('p-precio').value),
+                descuento: Number(document.getElementById('p-desc').value),
+                categoria: document.getElementById('p-cat').value,
+                descripcion: document.getElementById('p-descrip').value,
+                fichaTecnica: document.getElementById('p-ficha').value,
+                imagenURL: document.getElementById('p-img').value,
+                masVendido: document.getElementById('p-best').checked
+            };
+            if(id) await updateDoc(doc(db, "productos", id), data);
+            else await addDoc(collection(db, "productos"), data);
+            registrarActividad("Guardar Producto", `Se procesó el producto: ${data.nombre}`);
+            resetForm();
+        };
+
+        window.deleteProduct = async (id) => { 
+            if(['lector', 'ventas'].includes(currentUserRole)) return alert("No tienes permiso");
+            if(confirm("¿Borrar?")) {
+                await deleteDoc(doc(db, "productos", id));
+                registrarActividad("Eliminar Producto", `ID eliminado: ${id}`);
+            }
+        };
+
+        window.updateStatus = async (id, val) => {
+            if(currentUserRole === 'lector') return;
+            await updateDoc(doc(db, "pedidos", id), { estatus: val });
+            registrarActividad("Cambio de Estatus", `Pedido ${id.slice(0,5)} cambiado a ${val}`);
+        };
+
+        window.showOrderDetails = async (id) => {
+            const d = await getDoc(doc(db, "pedidos", id));
+            if(d.exists()){
+                const o = d.data();
+                document.getElementById('view-folio').innerText = "Pedido #" + (o.folio || id.slice(0,5));
+                document.getElementById('view-cliente').innerText = o.cliente;
+                document.getElementById('view-tel').innerText = "WhatsApp: " + o.telefono;
+                document.getElementById('view-tel').onclick = () => window.open(`https://wa.me/52${o.telefono}`, '_blank');
+                document.getElementById('view-status').innerText = o.estatus || 'Pendiente';
+                const e = o.entrega || {};
+                document.getElementById('view-direccion').innerText = `${e.calle || ''}, Col. ${e.colonia || ''}, ${e.ciudad || ''}, ${e.estado || ''}. CP: ${e.cp || ''}`;
+                document.getElementById('view-productos').innerHTML = (o.detalles || "").split(',').map(p => `• ${p.trim()}<br>`).join('');
+                document.getElementById('view-total').innerText = "Total: $" + o.total;
+                document.getElementById('order-modal').style.display = "block";
+            }
+        };
+
+        window.closeOrderModal = () => document.getElementById('order-modal').style.display = "none";
+        window.resetForm = () => {
+            document.getElementById('p-id').value = "";
+            document.querySelectorAll('#sec-nuevo input:not([type=checkbox]), #sec-nuevo textarea').forEach(i => i.value = "");
+        };
+        window.logout = () => signOut(auth).then(() => location.reload());
+
+        window.saveUserRole = async () => {
+            const uid = document.getElementById('u-uid').value.trim();
+            const nombre = document.getElementById('u-nombre').value.trim();
+            const rol = document.getElementById('u-rol').value;
+            if (!uid || !nombre) return alert("Llena todos los campos.");
+            try {
+                await setDoc(doc(db, "usuarios", uid), { nombre, rol, ultimaModificacion: serverTimestamp() });
+                registrarActividad("Gestión de Equipo", `Rol ${rol} asignado a ${nombre}`);
+                alert("Usuario registrado.");
+                document.getElementById('u-uid').value = ""; document.getElementById('u-nombre').value = "";
+            } catch (e) { alert("Error: " + e.message); }
+        };
+
+        function listenUsers() {
+            if (currentUserRole !== 'superadmin') return;
+            onSnapshot(collection(db, "usuarios"), (snap) => {
+                const list = document.getElementById('admin-user-list');
+                if (!list) return;
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const u = d.data();
+                    list.innerHTML += `<tr><td>${u.nombre}</td><td><span class="status-Surtido" style="padding:2px 8px; border-radius:10px;">${u.rol}</span></td><td><button class="btn-del" onclick="deleteUserRole('${d.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                });
+            });
+        }
+
+        window.deleteUserRole = async (id) => {
+            if (id === auth.currentUser.uid) return alert("No puedes eliminarte.");
+            if (confirm("¿Quitar acceso?")) await deleteDoc(doc(db, "usuarios", id));
+        };
+
+        let logsCache = [];
+        async function registrarActividad(accion, detalle) {
+            try {
+                await addDoc(collection(db, "bitacora"), {
+                    usuario: currentUserNombre,
+                    uid: auth.currentUser.uid,
+                    accion: accion,
+                    detalle: detalle,
+                    fecha: serverTimestamp()
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function listenBitacora() {
+            if (currentUserRole !== 'superadmin') return;
+            const q = query(collection(db, "bitacora"), orderBy("fecha", "desc"));
+            onSnapshot(q, (snap) => {
+                logsCache = [];
+                snap.forEach(doc => logsCache.push({ id: doc.id, ...doc.data() }));
+                renderizarLogs(logsCache);
+            });
+        }
+
+        function renderizarLogs(datos) {
+            const list = document.getElementById('lista-bitacora');
+            if (!list) return;
+            list.innerHTML = "";
+            datos.forEach(log => {
+                const fecha = log.fecha ? log.fecha.toDate().toLocaleString() : '...';
+                list.innerHTML += `<tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding:10px; color:#888;">${fecha}</td>
+                    <td><strong>${log.usuario}</strong></td>
+                    <td>${log.accion}</td>
+                    <td>${log.detalle}</td></tr>`;
+            });
+        }
+
+        window.filtrarBitacora = () => {
+            const texto = document.getElementById('log-search').value.toLowerCase();
+            const accion = document.getElementById('log-filter-accion').value;
+            const filtrados = logsCache.filter(log => (log.detalle.toLowerCase().includes(texto) || log.usuario.toLowerCase().includes(texto)) && (accion === "" || log.accion === accion));
+            renderizarLogs(filtrados);
+        };
+        window.copyToClipboard = () => {
+    const direccion = document.getElementById('view-direccion').innerText;
+    const btn = event.target.closest('button');
+    const originalText = btn.innerHTML;
+
+    // Función interna para el feedback visual
+    const darFeedback = () => {
+        btn.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+        btn.style.background = '#27ae60';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = '#666';
+        }, 2000);
+        registrarActividad("Consulta", "Se copió la dirección de un pedido");
+    };
+
+    // Intento 1: API Moderna
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(direccion).then(darFeedback).catch(() => {
+            usarMetodoTradicional(direccion, darFeedback);
+        });
+    } else {
+        // Intento 2: Método tradicional (compatible con sitios no seguros o locales)
+        usarMetodoTradicional(direccion, darFeedback);
+    }
+};
+
+// Función de respaldo para navegadores que bloquean el portapapeles
+function usarMetodoTradicional(texto, callback) {
+    const textArea = document.createElement("textarea");
+    textArea.value = texto;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        callback();
+    } catch (err) {
+        alert("Error al copiar. Por favor, selecciona el texto manualmente.");
+    }
+    document.body.removeChild(textArea);
+}
+    </script>
+</body>
+</html>
